@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="Application/Application.csproj" />
+  <Project Path="CentralApi/CentralApi.csproj" />
+  <Project Path="Domain/Domain.csproj" />
+  <Project Path="Infrastructure/Infrastructure.csproj" />
+  <Project Path="WebApi/Webapi.csproj" />
+  <Project Path="Test's/tests/QSR.Tests/QSR.Tests.csproj" />
+
+</Solution>

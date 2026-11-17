@@ -1,0 +1,68 @@
+services:
+  postgres:
+    networks: [branch]
+    image: postgres:17
+    environment:
+      POSTGRES_DB: qsr
+      POSTGRES_USER: qsr
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qsr -d qsr"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  redis:
+    networks: [branch]
+    image: redis:7-alpine
+
+  migrate:
+    networks: [branch]
+    image: qsr-branch:local
+    build:
+      context: ..
+      dockerfile: Docker/Dockerfile
+    command: ["dotnet", "Webapi.dll", "--migrate"]
+    environment:
+      ConnectionStrings__Branch: &branch_db "Host=postgres;Database=qsr;Username=qsr;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  branch:
+    networks: [branch]
+    image: qsr-branch:local
+    command: ["dotnet", "Webapi.dll"]
+    environment:
+      ConnectionStrings__Branch: *branch_db
+      ConnectionStrings__Redis: redis:6379,abortConnect=false
+      Branch__Id: ${QSR_BRANCH_ID:?Set QSR_BRANCH_ID}
+      Authentication__Authority: ${QSR_AUTHORITY:?Set QSR_AUTHORITY}
+      Authentication__Audience: ${QSR_AUDIENCE:?Set QSR_AUDIENCE}
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+
+  central:
+    networks: [central]
+    build:
+      context: ..
+      dockerfile: Docker/Dockerfile
+      args:
+        PROJECT: CentralApi/CentralApi.csproj
+    command: ["dotnet", "CentralApi.dll"]
+    ports:
+      - "127.0.0.1:8081:8080"
+
+volumes:
+  pgdata:
+
+networks:
+  branch:
+  central:

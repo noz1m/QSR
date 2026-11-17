@@ -1,0 +1,13 @@
+@host = http://localhost:8080
+
+GET {{host}}/health/live
+
+###
+
+GET {{host}}/api/inventory/low-stock
+Authorization: Bearer {{token}}
+
+###
+
+GET {{host}}/api/orders/{{orderId}}
+Authorization: Bearer {{token}}
